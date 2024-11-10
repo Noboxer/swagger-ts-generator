@@ -9,7 +9,7 @@ export const manufacturersRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.manufacturers.manufacturersList(, { data: undefined });
+        const response = await ctx.api.manufacturers.manufacturersList();
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -23,12 +23,12 @@ export const manufacturersRouter = router({
   // Update the details of a manufacturer by ID
   manufacturersUpdate: protectedProcedure
     .input(z.object({
-    id: z.string(),
-    data: z.unknown()
+    id: z.number(),
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.manufacturers.manufacturersUpdate(${input.params.id}, { data: input.data });
+        const response = await ctx.api.manufacturers.manufacturersUpdate(input.id, input.data);
         return response;
       } catch (error) {
         throw new TRPCError({

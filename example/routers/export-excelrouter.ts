@@ -6,10 +6,12 @@ import { TRPCError } from '@trpc/server';
 export const export-excelRouter = router({
   // Uploads an Excel file, processes the data, and posts the submodels
   processExcelCreate: protectedProcedure
-    .input(z.object({}))
+    .input(z.object({
+    data: [object Object]
+  }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.exportExcel.processExcelCreate(, { data: input.data });
+        const response = await ctx.api.exportExcel.processExcelCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({

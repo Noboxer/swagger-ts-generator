@@ -34,6 +34,10 @@ interface RouterConfig {
   routes: RouteConfig[];
 }
 
+function isReferenceObject(schema: any): schema is { $ref: string } {
+  return typeof schema === "object" && schema !== null && "$ref" in schema;
+}
+
 async function generateTrpcServer(
   routersDir: string,
   apiName: string,
@@ -126,49 +130,74 @@ function processRoute(
     description: routeData.raw.description,
     isProtected: method !== "get",
     input: {},
-    apiCall: buildApiCall(routeData, resource),
+    apiCall: buildApiCall(routeData).call,
   };
 
-  // Process path parameters
-  const pathParams = pathParts
-    .filter((part) => part.startsWith("{") && part.endsWith("}"))
-    .map((param) => param.slice(1, -1));
-  if (pathParams.length) {
-    route.input.params = pathParams.reduce(
-      (acc, param) => ({ ...acc, [param]: "z.string()" }),
-      {}
-    );
-  }
-
-  // Process query parameters
-  const queryParams = pathParts
-    .filter((part) => part.includes("?"))
-    .map((part) => part.split("?")[1])
-    .map((param) => param.split("=")[0]);
-  if (queryParams.length) {
-    route.input.query = queryParams.reduce(
-      (acc, param) => ({ ...acc, [param]: "z.string()" }),
-      {}
-    );
-  }
-
-  // Process request body
+  // Process request body type
+  let dataType = "z.unknown()";
   if (routeData.raw.requestBody) {
-    const bodySchema = processRequestBody(
-      routeData.raw.requestBody as OpenAPIV3.RequestBodyObject,
-      schemas,
-      globalSchemas
-    );
-    if (bodySchema) route.input.body = bodySchema;
+    const content = (routeData.raw.requestBody as OpenAPIV3.RequestBodyObject)
+      .content;
+    if (content?.["application/json"]?.schema) {
+      const schema = content["application/json"].schema;
+      if ("$ref" in schema && typeof schema.$ref === "string") {
+        const refType = schema.$ref.split("/").pop();
+        if (refType && globalSchemas[refType]) {
+          dataType = globalSchemas[refType];
+        }
+      } else if (isReferenceObject(schema) && schema.$ref) {
+        const refType = schema.$ref.split("/").pop();
+        if (refType && globalSchemas[refType]) {
+          dataType = globalSchemas[refType];
+        }
+      } else if (
+        !isReferenceObject(schema) &&
+        schema.type === "object" &&
+        schema.properties
+      ) {
+        dataType = convertToZodSchema(schema);
+      }
+    }
   }
 
-  // Process response
-  if (routeData.raw.responses) {
-    route.output = processResponse(
-      routeData.raw.responses,
-      schemas,
-      globalSchemas
-    );
+  // Special handling for specific endpoints
+  switch (routeData.routeName.usage) {
+    case "listCreate":
+      route.input = {
+        body: {
+          limit: "z.number().optional()",
+          offset: "z.number().optional()",
+          data: dataType,
+        },
+      };
+      break;
+    case "vehiclesUpdate":
+    case "bulkEditUpdate":
+    case "createCreate":
+    case "treatmentsCreate":
+      route.input.body = {
+        data: dataType,
+      };
+      break;
+    default:
+      // Process path parameters
+      const pathParams = pathParts
+        .filter((part) => part.startsWith("{") && part.endsWith("}"))
+        .map((param) => param.slice(1, -1));
+      if (pathParams.length) {
+        route.input.params = pathParams.reduce((acc, param) => {
+          const isIdParam = param.toLowerCase().includes("id");
+          return {
+            ...acc,
+            [param]: isIdParam ? "z.number()" : "z.string()",
+          };
+        }, {});
+      }
+
+      // Add data field for methods that need it
+      if (["post", "put", "patch"].includes(method)) {
+        route.input.body = { data: dataType };
+      }
   }
 
   return {
@@ -347,34 +376,81 @@ export const protectedProcedure = t.procedure.use(isAuthed);`;
   fs.writeFileSync(path.join(routersDir, "../trpc.ts"), trpcContent);
 }
 
-function convertToZodSchema(parsedSchema: any): string {
-  // Basic type mapping
-  switch (parsedSchema.type) {
-    case "string":
-      return "z.string()";
-    case "number":
-      return "z.number()";
-    case "boolean":
-      return "z.boolean()";
-    case "object":
-      if (parsedSchema.properties) {
-        const props = Object.entries(parsedSchema.properties)
-          .map(
-            ([key, value]: [string, any]) =>
-              `${key}: ${convertToZodSchema(value)}`
-          )
-          .join(",\n");
-        return `z.object({\n${props}\n})`;
-      }
-      return "z.object({})";
-    case "array":
-      if (parsedSchema.items) {
-        return `z.array(${convertToZodSchema(parsedSchema.items)})`;
-      }
-      return "z.array(z.unknown())";
-    default:
-      return "z.unknown()";
+function convertToZodSchema(schema: any): string {
+  // Handle $ref
+  if (schema.$ref) {
+    const refType = schema.$ref.split("/").pop();
+    // Return reference to the schema that will be defined
+    return `${refType}Schema`;
   }
+
+  // Handle nullable
+  const isNullable = schema.nullable || false;
+  let zodSchema = "";
+
+  // Handle arrays
+  if (schema.type === "array") {
+    zodSchema = `z.array(${convertToZodSchema(schema.items)})`;
+  }
+  // Handle enums
+  else if (schema.enum) {
+    const enumValues = schema.enum.map((value: any) =>
+      typeof value === "string" ? `'${value}'` : value
+    );
+    zodSchema = `z.enum([${enumValues.join(", ")}])`;
+  }
+  // Handle objects
+  else if (schema.type === "object" || schema.properties) {
+    const required = schema.required || [];
+    const properties = Object.entries(schema.properties || {})
+      .map(([key, prop]: [string, any]) => {
+        let propSchema = convertToZodSchema(prop);
+        if (!required.includes(key)) {
+          propSchema += ".optional()";
+        }
+        return `  ${key}: ${propSchema}`;
+      })
+      .join(",\n");
+    zodSchema = `z.object({\n${properties}\n})`;
+  }
+  // Handle primitive types
+  else {
+    switch (schema.type) {
+      case "string":
+        zodSchema = "z.string()";
+        if (schema.format === "date-time") {
+          zodSchema = "z.string().datetime()";
+        }
+        break;
+      case "number":
+      case "integer":
+        zodSchema = "z.number()";
+        break;
+      case "boolean":
+        zodSchema = "z.boolean()";
+        break;
+      default:
+        zodSchema = "z.unknown()";
+    }
+  }
+
+  // Add constraints
+  if (schema.type === "string") {
+    if (schema.minLength) zodSchema += `.min(${schema.minLength})`;
+    if (schema.maxLength) zodSchema += `.max(${schema.maxLength})`;
+    if (schema.pattern) zodSchema += `.regex(/${schema.pattern}/)`;
+  }
+  if (schema.type === "number" || schema.type === "integer") {
+    if (schema.minimum) zodSchema += `.min(${schema.minimum})`;
+    if (schema.maximum) zodSchema += `.max(${schema.maximum})`;
+  }
+
+  // Add nullable if needed
+  if (isNullable) {
+    zodSchema += ".nullable()";
+  }
+
+  return zodSchema;
 }
 
 function processParameters(parameters: OpenAPIV3.ParameterObject[]): {
@@ -415,54 +491,132 @@ function processRequestBody(
   return convertToZodSchema(schema);
 }
 
-function processResponse(
-  responses: OpenAPIV3.ResponsesObject,
-  schemas: Record<string, any>,
-  globalSchemas: Record<string, any>
-): string {
-  const successResponse = responses["200"] || responses["201"];
-  if (!successResponse) return "z.unknown()";
-
-  const content = (successResponse as OpenAPIV3.ResponseObject).content;
-  if (!content || !content["application/json"]) return "z.unknown()";
-
-  const schema = content["application/json"].schema;
-  if (!schema) return "z.unknown()";
-
-  if ("$ref" in schema) {
-    const refName = schema.$ref.split("/").pop();
-    return refName && globalSchemas[refName]
-      ? globalSchemas[refName]
-      : "z.unknown()";
-  }
-
-  return convertToZodSchema(schema);
-}
-
-function buildApiCall(routeData: ParsedRoute, resource: string): string {
-  const method = routeData.raw.method.toLowerCase();
+function buildApiCall(routeData: ParsedRoute): {
+  call: string;
+  zodSchema: z.ZodObject<any>;
+} {
   const namespace = routeData.namespace;
   const operationId = routeData.raw.operationId || routeData.routeName.usage;
-  const pathParams = routeData.raw.route
-    .split("/")
-    .filter((part) => part.startsWith("{") && part.endsWith("}"))
-    .map((param) => param.slice(1, -1))
-    .map((param) => `\${input.params.${param}}`)
-    .join("/");
-  const queryParams = routeData.raw.route
-    .split("/")
-    .filter((part) => part.includes("?"))
-    .map((part) => part.split("?")[1])
-    .map((param) => param.split("=")[0])
-    .map((param) => `${param}=\${input.query?.${param} ?? ''}`)
-    .join("&");
-  const bodyParam = routeData.raw.requestBody
-    ? "data: input.data"
-    : "data: undefined";
 
-  return `ctx.api.${namespace}.${operationId}(${pathParams}${
-    queryParams ? `?${queryParams}` : ""
-  }, { ${bodyParam} })`;
+  // Build the API call
+  let call = `ctx.api.${namespace}.${operationId}(`;
+  const params: string[] = [];
+
+  // Initialize schema properties
+  const schemaProperties: Record<string, z.ZodTypeAny> = {};
+
+  // Extract path parameters and build their schema
+  const pathParts = routeData.raw.route.split("/");
+  const pathParamNames: string[] = [];
+
+  for (const part of pathParts) {
+    if (part.startsWith("{") && part.endsWith("}")) {
+      const paramName = part.slice(1, -1);
+      pathParamNames.push(paramName);
+
+      // Add to schema properties
+      schemaProperties[paramName] = z.number(); // Default to number for IDs, adjust if needed
+    }
+  }
+
+  // Handle path parameters
+  pathParamNames.forEach((paramName) => {
+    params.push(`input.${paramName}`);
+  });
+
+  // // Handle query parameters
+  // const queryParams = (routeData.raw.parameters || [])
+  //   .filter((param) => param.in === "query")
+  //   .map((param) => param.name);
+
+  // if (queryParams.length > 0) {
+  //   // If we have path params, we need to merge them with query params
+  //   if (pathParamNames.length > 0) {
+  //     params[0] =
+  //       `{ ${pathParamNames.map((name) => `${name}: input.${name}`).join(", ")},` +
+  //       `${queryParams.map((name) => `${name}: input.${name}`).join(", ")} }`;
+  //   } else {
+  //     params.push(
+  //       `{ ${queryParams.map((name) => `${name}: input.${name}`).join(", ")} }`
+  //     );
+  //   }
+
+  //   // Add query params to schema
+  //   queryParams.forEach((paramName) => {
+  //     schemaProperties[paramName] = z.string().optional(); // Default to optional string, adjust if needed
+  //   });
+  // } else if (pathParamNames.length > 0) {
+  //   // If we only have path params, wrap them in an object
+  //   params[0] = `{ ${pathParamNames.map((name) => `${name}: input.${name}`).join(", ")} }`;
+  // }
+
+  // Handle request body
+  if (routeData.raw.requestBody) {
+    // Add request body schema
+    schemaProperties.data = buildRequestBodySchema(routeData.raw.requestBody);
+
+    // Add data parameter to API call
+    params.push("input.data");
+  }
+
+  // Complete the API call
+  call += params.join(", ");
+  call += ")";
+
+  // Create the final zod schema
+  const zodSchema = z.object(schemaProperties);
+
+  return {
+    call,
+    zodSchema,
+  };
 }
+function buildRequestBodySchema(requestBody: any): z.ZodTypeAny {
+  // Handle different types of request bodies
+  if (requestBody.content?.["application/json"]?.schema) {
+    const schema = requestBody.content["application/json"].schema;
+    return convertOpenAPISchemaToZod(schema);
+  }
 
+  // Default to an empty object schema if no specific schema is provided
+  return z.object({});
+}
+function convertOpenAPISchemaToZod(schema: any): z.ZodTypeAny {
+  if (!schema) return z.any();
+
+  switch (schema.type) {
+    case "object":
+      const properties: Record<string, z.ZodTypeAny> = {};
+      if (schema.properties) {
+        Object.entries(schema.properties).forEach(
+          ([key, value]: [string, any]) => {
+            properties[key] = convertOpenAPISchemaToZod(value);
+          }
+        );
+      }
+      return z.object(properties);
+
+    case "array":
+      return z.array(convertOpenAPISchemaToZod(schema.items));
+
+    case "string":
+      if (schema.enum) {
+        return z.enum(schema.enum as [string, ...string[]]);
+      }
+      return z.string();
+
+    case "number":
+    case "integer":
+      return z.number();
+
+    case "boolean":
+      return z.boolean();
+
+    case "null":
+      return z.null();
+
+    default:
+      return z.any();
+  }
+}
 export { generateTrpcServer };

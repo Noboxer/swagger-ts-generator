@@ -9,7 +9,7 @@ export const categoriesRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.categoriesList(, { data: undefined });
+        const response = await ctx.api.categories.categoriesList();
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -23,11 +23,11 @@ export const categoriesRouter = router({
   // Create a new vehicle category
   categoriesCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.categoriesCreate(, { data: input.data });
+        const response = await ctx.api.categories.categoriesCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -41,12 +41,12 @@ export const categoriesRouter = router({
   // Update a vehicle category
   categoriesUpdate: protectedProcedure
     .input(z.object({
-    id: z.string(),
-    data: z.unknown()
+    id: z.number(),
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.categoriesUpdate(${input.params.id}, { data: input.data });
+        const response = await ctx.api.categories.categoriesUpdate(input.id, input.data);
         return response;
       } catch (error) {
         throw new TRPCError({

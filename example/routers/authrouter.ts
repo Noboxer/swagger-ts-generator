@@ -7,11 +7,11 @@ export const authRouter = router({
   // Change password with old and new password
   changeCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.changeCreate(, { data: input.data });
+        const response = await ctx.api.auth.changeCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -25,11 +25,11 @@ export const authRouter = router({
   // Login with email and password
   loginCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.loginCreate(, { data: input.data });
+        const response = await ctx.api.auth.loginCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -43,11 +43,11 @@ export const authRouter = router({
   // Verify the login code
   loginVerifyCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.loginVerifyCreate(, { data: input.data });
+        const response = await ctx.api.auth.loginVerifyCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -61,11 +61,11 @@ export const authRouter = router({
   // Register with email and password
   registerCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.registerCreate(, { data: input.data });
+        const response = await ctx.api.auth.registerCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -79,11 +79,11 @@ export const authRouter = router({
   // Terminate sessions by IDs
   terminateCreate: protectedProcedure
     .input(z.object({
-    data: z.array(z.unknown())
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.terminateCreate(, { data: input.data });
+        const response = await ctx.api.auth.terminateCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -96,10 +96,12 @@ export const authRouter = router({
 
   // Terminate all sessions
   terminateAllCreate: protectedProcedure
-    .input(z.object({}))
+    .input(z.object({
+    data: [object Object]
+  }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.terminateAllCreate(, { data: undefined });
+        const response = await ctx.api.auth.terminateAllCreate();
         return response;
       } catch (error) {
         throw new TRPCError({

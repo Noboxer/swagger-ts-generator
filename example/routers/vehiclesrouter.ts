@@ -7,11 +7,11 @@ export const vehiclesRouter = router({
   // Bulk edit vehicles
   bulkEditUpdate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.bulkEditUpdate(, { data: input.data });
+        const response = await ctx.api.vehicles.bulkEditUpdate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -27,7 +27,7 @@ export const vehiclesRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.countList(, { data: undefined });
+        const response = await ctx.api.vehicles.countList();
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -40,10 +40,12 @@ export const vehiclesRouter = router({
 
   // Create a new vehicle with the provided data
   createCreate: protectedProcedure
-    .input(z.object({}))
+    .input(z.object({
+    data: [object Object]
+  }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.createCreate(, { data: input.data });
+        const response = await ctx.api.vehicles.createCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -57,11 +59,11 @@ export const vehiclesRouter = router({
   // Get all vehicles with optional filters
   listCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.listCreate(, { data: input.data });
+        const response = await ctx.api.vehicles.listCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -75,11 +77,11 @@ export const vehiclesRouter = router({
   // Add a vehicle treatment
   treatmentsCreate: protectedProcedure
     .input(z.object({
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.treatmentsCreate(, { data: input.data });
+        const response = await ctx.api.vehicles.treatmentsCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -93,11 +95,11 @@ export const vehiclesRouter = router({
   // Get a vehicle treatment
   treatmentsDetail: publicProcedure
     .input(z.object({
-    treatment_id: z.string()
+    treatment_id: z.number()
   }))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.treatmentsDetail(${input.params.treatment_id}, { data: undefined });
+        const response = await ctx.api.vehicles.treatmentsDetail(input.treatment_id);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -111,11 +113,11 @@ export const vehiclesRouter = router({
   // Remove a vehicle treatment
   treatmentsDelete: protectedProcedure
     .input(z.object({
-    treatment_id: z.string()
+    treatment_id: z.number()
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.treatmentsDelete(${input.params.treatment_id}, { data: undefined });
+        const response = await ctx.api.vehicles.treatmentsDelete(input.treatment_id);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -129,11 +131,11 @@ export const vehiclesRouter = router({
   // Get a vehicle by ID
   vehiclesDetail: publicProcedure
     .input(z.object({
-    id: z.string()
+    id: z.number()
   }))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.vehiclesDetail(${input.params.id}, { data: undefined });
+        const response = await ctx.api.vehicles.vehiclesDetail(input.id);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -147,11 +149,11 @@ export const vehiclesRouter = router({
   // Update a vehicle with the provided data
   vehiclesUpdate: protectedProcedure
     .input(z.object({
-    id: z.string()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.vehiclesUpdate(${input.params.id}, { data: input.data });
+        const response = await ctx.api.vehicles.vehiclesUpdate(input.id, input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -165,11 +167,11 @@ export const vehiclesRouter = router({
   // Delete a vehicle by ID
   vehiclesDelete: protectedProcedure
     .input(z.object({
-    id: z.string()
+    id: z.number()
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.vehiclesDelete(${input.params.id}, { data: undefined });
+        const response = await ctx.api.vehicles.vehiclesDelete(input.id);
         return response;
       } catch (error) {
         throw new TRPCError({

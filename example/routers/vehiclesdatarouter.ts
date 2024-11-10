@@ -8,11 +8,11 @@ export const vehiclesDataRouter = router({
   getFieldOptionsOptionsCreate: protectedProcedure
     .input(z.object({
     field: z.string(),
-    data: z.unknown()
+    data: [object Object]
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehiclesData.getFieldOptionsOptionsCreate(${input.params.field}, { data: input.data });
+        const response = await ctx.api.vehiclesData.getFieldOptionsOptionsCreate(input.field, input.data);
         return response;
       } catch (error) {
         throw new TRPCError({

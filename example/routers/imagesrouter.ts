@@ -6,10 +6,12 @@ import { TRPCError } from '@trpc/server';
 export const imagesRouter = router({
   // Upload an image
   uploadCreate: protectedProcedure
-    .input(z.object({}))
+    .input(z.object({
+    data: [object Object]
+  }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.images.uploadCreate(, { data: input.data });
+        const response = await ctx.api.images.uploadCreate(input.data);
         return response;
       } catch (error) {
         throw new TRPCError({
