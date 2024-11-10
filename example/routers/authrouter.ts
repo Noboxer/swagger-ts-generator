@@ -11,7 +11,7 @@ export const authRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: input.data });
+        const response = await ctx.api.auth.changeCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -29,7 +29,7 @@ export const authRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: input.data });
+        const response = await ctx.api.auth.loginCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -47,7 +47,7 @@ export const authRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: input.data });
+        const response = await ctx.api.auth.loginVerifyCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -65,7 +65,7 @@ export const authRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: input.data });
+        const response = await ctx.api.auth.registerCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -83,7 +83,7 @@ export const authRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: input.data });
+        const response = await ctx.api.auth.terminateCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -99,7 +99,7 @@ export const authRouter = router({
     .input(z.object({}))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.auth.undefined(, { data: undefined });
+        const response = await ctx.api.auth.terminateAllCreate(, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({

@@ -1,7 +1,7 @@
 import { inferAsyncReturnType } from '@trpc/server';
 import { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
-import { Api } from '../generated/api';
+import { Api } from './__generated__/LajitApi';
 
 export async function createContext({ req, res }: CreateNextContextOptions) {
   const session = await getSession({ req });

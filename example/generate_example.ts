@@ -14,5 +14,6 @@ import { generateTrpcServer } from "../src/trpc-server-generator";
 
 generateTrpcServer(
   "./example/routers",
+  "LajitApi",
   "https://back.lajit.com/swagger/doc.json"
 );

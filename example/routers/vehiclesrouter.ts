@@ -11,7 +11,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(, { data: input.data });
+        const response = await ctx.api.vehicles.bulkEditUpdate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -27,7 +27,7 @@ export const vehiclesRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(, { data: undefined });
+        const response = await ctx.api.vehicles.countList(, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -43,7 +43,7 @@ export const vehiclesRouter = router({
     .input(z.object({}))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(, { data: input.data });
+        const response = await ctx.api.vehicles.createCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -61,7 +61,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(, { data: input.data });
+        const response = await ctx.api.vehicles.listCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -79,7 +79,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(, { data: input.data });
+        const response = await ctx.api.vehicles.treatmentsCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -97,7 +97,7 @@ export const vehiclesRouter = router({
   }))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(${input.params.treatment_id}, { data: undefined });
+        const response = await ctx.api.vehicles.treatmentsDetail(${input.params.treatment_id}, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -115,7 +115,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(${input.params.treatment_id}, { data: undefined });
+        const response = await ctx.api.vehicles.treatmentsDelete(${input.params.treatment_id}, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -133,7 +133,7 @@ export const vehiclesRouter = router({
   }))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(${input.params.id}, { data: undefined });
+        const response = await ctx.api.vehicles.vehiclesDetail(${input.params.id}, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -151,7 +151,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(${input.params.id}, { data: input.data });
+        const response = await ctx.api.vehicles.vehiclesUpdate(${input.params.id}, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -169,7 +169,7 @@ export const vehiclesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehicles.undefined(${input.params.id}, { data: undefined });
+        const response = await ctx.api.vehicles.vehiclesDelete(${input.params.id}, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({

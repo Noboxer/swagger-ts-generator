@@ -9,7 +9,7 @@ export const manufacturersRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.manufacturers.undefined(, { data: undefined });
+        const response = await ctx.api.manufacturers.manufacturersList(, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -28,7 +28,7 @@ export const manufacturersRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.manufacturers.undefined(${input.params.id}, { data: input.data });
+        const response = await ctx.api.manufacturers.manufacturersUpdate(${input.params.id}, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({

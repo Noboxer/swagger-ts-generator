@@ -36,6 +36,7 @@ interface RouterConfig {
 
 async function generateTrpcServer(
   routersDir: string,
+  apiName: string,
   swaggerUrl: string
 ): Promise<void> {
   try {
@@ -94,7 +95,7 @@ async function generateTrpcServer(
 
     // Generate files
     await generateRouterFiles(routers, routersDir);
-    await generateHelperFiles(routersDir);
+    await generateHelperFiles(routersDir, apiName);
 
     console.log("tRPC server generation completed successfully!");
   } catch (error) {
@@ -291,12 +292,15 @@ ${merges}
 export type AppRouter = typeof appRouter;`;
 }
 
-async function generateHelperFiles(routersDir: string): Promise<void> {
+async function generateHelperFiles(
+  routersDir: string,
+  apiName: string
+): Promise<void> {
   // Generate context.ts
   const contextContent = `import { inferAsyncReturnType } from '@trpc/server';
 import { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
-import { Api } from '../generated/api';
+import { Api } from './__generated__/${apiName}';
 
 export async function createContext({ req, res }: CreateNextContextOptions) {
   const session = await getSession({ req });
@@ -427,7 +431,9 @@ function processResponse(
 
   if ("$ref" in schema) {
     const refName = schema.$ref.split("/").pop();
-    return refName && globalSchemas[refName] ? globalSchemas[refName] : "z.unknown()";
+    return refName && globalSchemas[refName]
+      ? globalSchemas[refName]
+      : "z.unknown()";
   }
 
   return convertToZodSchema(schema);
@@ -435,6 +441,8 @@ function processResponse(
 
 function buildApiCall(routeData: ParsedRoute, resource: string): string {
   const method = routeData.raw.method.toLowerCase();
+  const namespace = routeData.namespace;
+  const operationId = routeData.raw.operationId || routeData.routeName.usage;
   const pathParams = routeData.raw.route
     .split("/")
     .filter((part) => part.startsWith("{") && part.endsWith("}"))
@@ -452,7 +460,7 @@ function buildApiCall(routeData: ParsedRoute, resource: string): string {
     ? "data: input.data"
     : "data: undefined";
 
-  return `ctx.api.${resource}.${routeData.raw.operationId}(${pathParams}${
+  return `ctx.api.${namespace}.${operationId}(${pathParams}${
     queryParams ? `?${queryParams}` : ""
   }, { ${bodyParam} })`;
 }

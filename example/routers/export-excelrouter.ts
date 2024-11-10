@@ -9,7 +9,7 @@ export const export-excelRouter = router({
     .input(z.object({}))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.export-excel.undefined(, { data: input.data });
+        const response = await ctx.api.exportExcel.processExcelCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({

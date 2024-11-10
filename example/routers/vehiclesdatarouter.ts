@@ -12,7 +12,7 @@ export const vehiclesDataRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.vehiclesData.undefined(${input.params.field}, { data: input.data });
+        const response = await ctx.api.vehiclesData.getFieldOptionsOptionsCreate(${input.params.field}, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({

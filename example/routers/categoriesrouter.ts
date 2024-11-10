@@ -9,7 +9,7 @@ export const categoriesRouter = router({
     .input(z.object({}))
     .query(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.undefined(, { data: undefined });
+        const response = await ctx.api.categories.categoriesList(, { data: undefined });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -27,7 +27,7 @@ export const categoriesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.undefined(, { data: input.data });
+        const response = await ctx.api.categories.categoriesCreate(, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
@@ -46,7 +46,7 @@ export const categoriesRouter = router({
   }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const response = await ctx.api.categories.undefined(${input.params.id}, { data: input.data });
+        const response = await ctx.api.categories.categoriesUpdate(${input.params.id}, { data: input.data });
         return response;
       } catch (error) {
         throw new TRPCError({
